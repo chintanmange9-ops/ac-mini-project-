@@ -3,7 +3,7 @@
 <title>Login — Encrypted</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
 <script src="/static/crypto.js"></script>
-<style>body{font-family:Segoe UI,Arial;background:#0f172a;color:#e2e8f0;display:flex;justify-content:center;padding:30px}form{background:#1e293b;padding:28px;border-radius:12px;width:920px;max-width:94vw}form.narrow{width:400px}input{width:100%;margin:8px 0;padding:10px;border-radius:6px;border:1px solid #334155;box-sizing:border-box}button{width:100%;padding:12px;background:#38bdf8;border:0;border-radius:8px;font-weight:700;cursor:pointer}#out{margin-top:14px;background:#082f49;padding:12px;border-radius:8px;display:none;word-break:break-all}#err{margin-top:10px;color:#f87171}a{color:#38bdf8}table{border-collapse:collapse;font-size:13px;margin-top:8px}table.mine{width:100%}table.mine td{border:1px solid #334155;padding:5px}div.wrap{overflow-x:auto}table#dbtable{table-layout:fixed;width:100%;font-size:12px}table#dbtable th,table#dbtable td{border:1px solid #334155;padding:6px;word-break:break-all;overflow-wrap:anywhere}table#dbtable th{background:#0f172a;position:relative;user-select:none}div.resizer{position:absolute;right:-4px;top:0;width:9px;height:100%;cursor:col-resize;z-index:2}div.resizer:hover{background:#38bdf8}div.flow{display:flex;gap:4px;margin-top:8px;flex-wrap:wrap}div.step{background:#0f172a;border:1px solid #334155;border-radius:8px;padding:8px;font-size:12px;flex:1;min-width:120px}div.arr{align-self:center;color:#38bdf8;font-weight:700}</style>
+<style>body{font-family:Segoe UI,Arial;background:#0f172a;color:#e2e8f0;display:flex;justify-content:center;padding:30px}form{background:#1e293b;padding:28px;border-radius:12px;width:920px;max-width:94vw}form.narrow{width:400px}input{width:100%;margin:8px 0;padding:10px;border-radius:6px;border:1px solid #334155;box-sizing:border-box}button{width:100%;padding:12px;background:#38bdf8;border:0;border-radius:8px;font-weight:700;cursor:pointer}#out{margin-top:14px;background:#082f49;padding:12px;border-radius:8px;display:none;word-break:break-all}#err{margin-top:10px;color:#f87171}a{color:#38bdf8}table{border-collapse:collapse;font-size:13px;margin-top:8px}table.mine{width:100%}table.mine td{border:1px solid #334155;padding:5px}div.wrap{overflow-x:auto}table#dbtable{table-layout:fixed;width:100%;font-size:12px}table#dbtable th,table#dbtable td{border:1px solid #334155;padding:6px;word-break:break-all;overflow-wrap:anywhere}table#dbtable th{background:#0f172a;position:relative;user-select:none}div.resizer{position:absolute;right:-4px;top:0;width:9px;height:100%;cursor:col-resize;z-index:2}div.resizer:hover{background:#38bdf8}div.flow{display:flex;gap:4px;margin-top:8px;flex-wrap:wrap}div.step{background:#0f172a;border:1px solid #334155;border-radius:8px;padding:8px;font-size:12px;flex:1;min-width:120px}div.arr{align-self:center;color:#38bdf8;font-weight:700}div.subtabs{margin:10px 0}button.subtab{width:auto;background:#0f172a;color:#94a3b8;border:1px solid #334155;border-radius:8px;padding:8px 14px;margin:0 6px 0 0;cursor:pointer;font-weight:600}button.subtab.on{background:#38bdf8;color:#082f49;border-color:#38bdf8}</style>
 </head><body>
 <form id="loginform" class="narrow" onsubmit="return false">
 <h2>Student Login</h2>
@@ -47,7 +47,13 @@ async function doLogin(){
   F.forEach(f=>{rows+='<tr><td>'+f+'</td><td><b>'+CryptoProvider.decryptField(pf[f+'_enc'],pf.iv)+'</b></td></tr>';});
   const out=document.getElementById('out');out.style.display='block';
   document.getElementById('loginform').classList.remove('narrow');
-  out.innerHTML='Login success. Welcome, <b>'+name+'</b><br><br>Your record in DB (decrypted with your key):<table class="mine">'+rows+'</table>'+renderTransparency(pf)+'<br><b>Full stored DB (all rows, locked) — login required to see this:</b><div id="dbtbl"><p>Loading DB…</p></div>';
+  out.innerHTML='Login success. Welcome, <b>'+name+'</b><br>'
+    +'<div class="subtabs"><button class="subtab on" onclick="showPane(0,this)">Your record</button>'
+    +'<button class="subtab" onclick="showPane(1,this)">Workflow + calls</button>'
+    +'<button class="subtab" onclick="showPane(2,this)">Full DB</button></div>'
+    +'<div id="pane0">Your record in DB (decrypted with your key):<table class="mine">'+rows+'</table></div>'
+    +'<div id="pane1" style="display:none">'+renderTransparency(pf)+'</div>'
+    +'<div id="pane2" style="display:none"><b>Full stored DB (all rows, locked) — login required to see this:</b><div id="dbtbl"><p>Loading DB…</p></div></div>';
   loadFullDB(payload);
 }
 function renderTransparency(pf){
@@ -85,6 +91,11 @@ async function loadFullDB(payload){
     makeResizable(document.getElementById('dbtable'));
     if(document.getElementById('calls'))document.getElementById('calls').innerHTML=callsHTML();
   }catch(e){document.getElementById('dbtbl').innerHTML='<p>Cannot reach BD.</p>';}
+}
+function showPane(i,btn){
+  [0,1,2].forEach(n=>{document.getElementById('pane'+n).style.display=(n===i?'block':'none');});
+  btn.parentElement.querySelectorAll('.subtab').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
 }
 function makeResizable(table){
   table.querySelectorAll('th').forEach(th=>{
