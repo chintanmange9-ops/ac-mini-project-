@@ -1,11 +1,11 @@
 # Secure Student Portal — Applied Cryptography Mini Project
-**Stack:** Python Flask + SQLite · **Crypto:** TES-128 twin-engine cipher (lock) + SHA-256 (fingerprint)
+**Stack:** Python Flask + SQLite · **Crypto:** TES-128 twin-engine cipher (lock) + SHA-256 (hashing)
 
 ## Simple idea
 Student types 5 things (roll no, sap id, name, sem, branch) in plaintext on screen.
-Browser locks each + makes fingerprint → 10 values travel. Server saves those 10 as-is.
+Browser locks each + makes hashing → 10 values travel. Server saves those 10 as-is.
 Server returns sap_id + strong 12-char password (locked). Login also sends only
-locked sap_id + password fingerprint. Plaintext never goes on wire or in DB.
+locked sap_id + password hashing. Plaintext never goes on wire or in DB.
 
 ## Run (2 servers)
 ```
@@ -55,8 +55,3 @@ Pages come from :5000, data goes to :5001 (see Network tab + CORS on BD).
 - Tip: this folder is inside OneDrive — if sync ever truncates `students.db`
   to 0 bytes, the server heals it on the next request; your old rows in a
   corrupt file can't be recovered, so re-register.
-
-## Limitations to say in viva (gets marks)
-- Demo uses pre-shared key visible in JS → production needs TLS + RSA/ECDH exchange.
-- Single IV per request (demo-simple) → production: fresh IV per field.
-- Passwords stored as SHA-256 demo hash → production: bcrypt/argon2 + salt.
