@@ -19,24 +19,26 @@ Open http://127.0.0.1:5000 → Register → note SAP ID + password → Login.
 Pages come from :5000, data goes to :5001 (see Network tab + CORS on BD).
 
 ## Prove it in viva
-1. DevTools → Network → `/api/register` payload: only `*_enc` + `*_hash`, no plaintext.
+1. DevTools → Network → `/api/register` payload: only `*_enc` + `*_hash`
+   (+ `iv`/`algo`/`key_version` envelope) — no plaintext.
 2. Open `students.db` (lives next to bd_server) or log in to see the DB table:
    only ciphertext + hashes, all columns except `algo`, rows in ascending id order.
 3. Tamper test: change one hash → `400 Integrity failed`.
-4. Wrong password → `401`. DB preview without login → `401`.
+4. Wrong password → `401`. DB preview without a valid login → denied (`401`, or `400` if fields are missing).
 5. After login, the full DB table appears next to your decrypted record
    (BD `POST /api/db-preview` needs a valid login; FD itself never touches the DB).
    Drag column edges to resize like Excel; hover a cell for the full value.
 6. After login, your own DB record is shown decrypted
    (BD `POST /api/profile` returns your locked row, browser unlocks it).
 7. Workflow strip after login shows the data journey, the exact FD→BD calls
-   (method, URL, headers, body keys, recorded live), plus a compact integrity
-   table (browser SHA256 vs stored hash → MATCH).
+   (method, URL, headers, full body values, recorded live), plus a compact
+   integrity table (browser SHA256 vs stored hash → MATCH).
 
 ## Change encryption later (already planned)
-- Backend: only `tes_cipher.py` (+ thin dispatch in `crypto_utils.py`) knows TES.
-  change 1 line `ENCRYPTION_ALGO` in `config.py`. Bump `KEY_VERSION`.
-- Frontend: only `static/crypto.js` → `CryptoProvider` knows AES.
+- Backend: TES lives in `tes_cipher.py` (+ thin dispatch in `crypto_utils.py`).
+  To swap: add functions there, change 1 line `ENCRYPTION_ALGO` in `config.py`,
+  bump `KEY_VERSION`.
+- Frontend: only `static/crypto.js` → `CryptoProvider` knows TES-128.
   Replace its 4 functions, keep names. `algo` + `key_version` travel in
   every payload and are stored per-row, so old rows still decrypt.
 - No change needed in `bd_server.py`, `fd_server.py`, `database.py`, or HTML forms.

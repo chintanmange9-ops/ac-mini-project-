@@ -13,7 +13,10 @@ FIXES vs the draft blueprint (both were in the AES *decrypt* path):
 import base64
 import os
 
-TES_ROUNDS = 4
+try:
+    from config import TES_ROUNDS  # single authority for round count
+except Exception:
+    TES_ROUNDS = 4
 TES_BLOCK = 16
 
 AES_SBOX = [

@@ -2,8 +2,8 @@
 
 ## Which file creates it?
 
-**`crypto_utils.py` → `generate_strong_password()`** (lines 82–102).
-Policy comes from **`config.py`** (`PASSWORD_LENGTH = 12`, line 14).
+**`crypto_utils.py` → `generate_strong_password()`** (lines 86–106).
+Policy comes from **`config.py`** (`PASSWORD_LENGTH = 12`, line 18).
 It is called by **`bd_server.py` → `api_register()`** — the BD server creates the
 password at the moment a student registers. The student never chooses it,
 and the frontend never generates it.
@@ -14,12 +14,12 @@ and the frontend never generates it.
 |---|---|
 | Length | 12 chars (`config.PASSWORD_LENGTH`) |
 | Must contain | 1 lowercase + 1 UPPERCASE + 1 digit + 1 symbol |
-| Allowed symbols | `@#$!%*?&` (variable `symbols`, line 87) |
+| Allowed symbols | `@#$!%*?&` (variable `symbols`, line 91) |
 | Random source | `secrets` module (CSPRNG), never `random` |
 
 ## Algorithm, step by step (maps to code lines)
 
-1. **Force one character from each group** (lines 89–93) — this *guarantees*
+1. **Force one character from each group** (lines 93–98) — this *guarantees*
    the policy instead of hoping for it:
    ```python
    pwd = [
@@ -30,10 +30,10 @@ and the frontend never generates it.
    ]
    ```
 2. **Fill the remaining `length − 4 = 8` slots** with random picks from all
-   four groups mixed together (lines 94–95).
-3. **Shuffle** with `secrets.SystemRandom().shuffle(pwd)` (line 96), so the
+   four groups mixed together (lines 98–99).
+3. **Shuffle** with `secrets.SystemRandom().shuffle(pwd)` (line 100), so the
    four forced characters are not sitting in predictable positions.
-4. **Verify and loop** (lines 98–102): accept the candidate only if all four
+4. **Verify and loop** (lines 102–106): accept the candidate only if all four
    groups are present, otherwise repeat. Because step 1 forces each group,
    the loop passes on the first try in practice — it is a safety net.
 5. **Return** the 12-character string, e.g. `A7k@pQ9z#W2mX`-style output.
@@ -51,7 +51,7 @@ Viva line: *"passwords and IVs use a CSPRNG; `random` never appears in this proj
    goes into the `password_hash` column. The plaintext password exists in no
    column, and the original is discarded from server memory after the response.
 2. **Sent back locked** — encrypted with TES-128 (v1 used AES-256-CBC) under a **fresh IV**
-   (`generate_iv()`), returned as `{user_id, password_enc, iv}`.
+   (`generate_iv()`), returned as `{user_id, password_enc, iv, algo, key_version}`.
 3. **Shown once** — the frontend decrypts it in the browser and displays it;
    the student notes it down.
 4. **Login check** — the frontend sends only `SHA256(password)`; BD compares
