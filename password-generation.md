@@ -47,7 +47,7 @@ Viva line: *"passwords and IVs use a CSPRNG; `random` never appears in this proj
 
 ## What happens to the password after creation? (`bd_server.py`)
 
-1. **Stored as fingerprint only** — `password_hash = sha256_hash(password)`
+1. **Stored as hashing only** — `password_hash = sha256_hash(password)`
    goes into the `password_hash` column. The plaintext password exists in no
    column, and the original is discarded from server memory after the response.
 2. **Sent back locked** — encrypted with TES-128 (v1 used AES-256-CBC) under a **fresh IV**

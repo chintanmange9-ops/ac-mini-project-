@@ -14,7 +14,7 @@
 | DES-style engine | `tes_cipher.py` | `des_engine_round()` / `des_engine_inverse()` (XOR-rotate + key) |
 | Swap + key schedule | `tes_cipher.py` | round loop, `derive_round_keys()`, `basic_vigenere_layer()` |
 | Swap point (algo dispatch) | `crypto_utils.py` | `encrypt_field()` / `decrypt_field()` (`"TES-128"` vs `"AES-256-CBC"` v1) |
-| SHA-256 fingerprint + verify | `crypto_utils.py` | `sha256_hash()` / `verify_hash()` (unchanged) |
+| SHA-256 hashing + verify | `crypto_utils.py` | `sha256_hash()` / `verify_hash()` (unchanged) |
 | Master key, algo, version | `config.py` | `TES_MASTER_KEY`, `ENCRYPTION_ALGO="TES-128"`, `KEY_VERSION=2` |
 | Browser-side mirror | `static/crypto.js` | `CryptoProvider` (TES port, sync, no new dependencies) |
 | Callers (untouched) | `bd_server.py` | `api_register`, `api_login`, `api_profile`, `api_db_preview` |
@@ -108,7 +108,7 @@ block 2  ee9ea334c1df8031ad8b9e0bfda1c60a          (padding block through same p
 blob     000102030405060708090a0b0c0d0e0f ‖ block1 ‖ block2  = frozen vector ✓
 ```
 
-## 4. SHA-256 — the fingerprint (unchanged from v1)
+## 4. SHA-256 — the hashing (unchanged from v1)
 
 ```
 H : {0,1}* → {0,1}²⁵⁶        (any input → fixed 256-bit digest, 64 hex chars)
