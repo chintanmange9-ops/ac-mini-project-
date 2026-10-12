@@ -1,0 +1,33 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Login — Encrypted</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+<script src="/static/crypto.js"></script>
+<style>body{font-family:Segoe UI,Arial;background:#0f172a;color:#e2e8f0;display:flex;justify-content:center;padding:30px}form{background:#1e293b;padding:28px;border-radius:12px;width:400px}input{width:100%;margin:8px 0;padding:10px;border-radius:6px;border:1px solid #334155;box-sizing:border-box}button{width:100%;padding:12px;background:#38bdf8;border:0;border-radius:8px;font-weight:700;cursor:pointer}#out{margin-top:14px;background:#082f49;padding:12px;border-radius:8px;display:none}#err{margin-top:10px;color:#f87171}a{color:#38bdf8}</style>
+</head><body>
+<form onsubmit="return false">
+<h2>Student Login</h2>
+<p style="font-size:12px;color:#94a3b8">SAP ID travels locked, password travels as fingerprint only.</p>
+<input id="sap_id" placeholder="Login ID = SAP ID" required>
+<input id="password" type="password" placeholder="Strong password" required>
+<button onclick="doLogin()">Encrypt &amp; Login</button>
+<div id="err"></div><div id="out"></div>
+<p><a href="/">← Home</a></p>
+</form>
+<script>const BD_URL="{{ bd_url }}";
+async function doLogin(){
+  document.getElementById('err').textContent='';
+  const sap=document.getElementById('sap_id').value.trim(), pwd=document.getElementById('password').value;
+  if(!sap||!pwd){document.getElementById('err').textContent='Both fields required.';return;}
+  const iv=CryptoProvider.randomIV();
+  const payload={sap_id_enc:CryptoProvider.encryptField(sap,iv),sap_id_hash:CryptoProvider.sha256(sap),
+    password_hash:CryptoProvider.sha256(pwd),iv,algo:CryptoProvider.ALGO,key_version:CryptoProvider.KEY_VERSION};
+  const r=await fetch(BD_URL+'/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  const j=await r.json();
+  if(!r.ok){document.getElementById('err').textContent=j.error||'Login failed';return;}
+  const name=CryptoProvider.decryptField(j.name_enc,j.iv);
+  const out=document.getElementById('out');out.style.display='block';
+  out.innerHTML='Login success. Welcome, <b>'+name+'</b> (decrypted locally with key).';
+}
+</script>
+</body></html>

@@ -1,0 +1,38 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Register — Encrypted</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+<script src="/static/crypto.js"></script>
+<style>body{font-family:Segoe UI,Arial;background:#0f172a;color:#e2e8f0;display:flex;justify-content:center;padding:30px}form{background:#1e293b;padding:28px;border-radius:12px;width:400px}input{width:100%;margin:8px 0;padding:10px;border-radius:6px;border:1px solid #334155;box-sizing:border-box}button{width:100%;padding:12px;background:#22c55e;border:0;border-radius:8px;font-weight:700;cursor:pointer}#out{margin-top:14px;background:#052e16;padding:12px;border-radius:8px;display:none;word-break:break-all}#err{margin-top:10px;color:#f87171}a{color:#38bdf8}</style>
+</head><body>
+<form id="f" onsubmit="return false">
+<h2>Student Register</h2>
+<p style="font-size:12px;color:#94a3b8">You type plaintext — browser sends only locked + fingerprint (10 cells).</p>
+<input id="roll_no" placeholder="Roll No (e.g. 21CS001)" required>
+<input id="sap_id" placeholder="SAP ID (login id, e.g. 60004210001)" required>
+<input id="name" placeholder="Full Name" required>
+<input id="sem" placeholder="Semester (1-8)" required>
+<input id="branch" placeholder="Branch (e.g. CSE)" required>
+<button onclick="doRegister()">Encrypt &amp; Register</button>
+<div id="err"></div>
+<div id="out"></div>
+<p><a href="/">← Home</a> · <a href="/login">Go to Login</a></p>
+</form>
+<script>const BD_URL="{{ bd_url }}";
+async function doRegister(){
+  document.getElementById('err').textContent='';
+  const F=['roll_no','sap_id','name','sem','branch'];
+  const vals={}; F.forEach(f=>vals[f]=document.getElementById(f).value.trim());
+  if(Object.values(vals).some(v=>!v)){document.getElementById('err').textContent='All 5 fields required.';return;}
+  const iv=CryptoProvider.randomIV();
+  const payload={iv,algo:CryptoProvider.ALGO,key_version:CryptoProvider.KEY_VERSION};
+  F.forEach(f=>{payload[f+'_enc']=CryptoProvider.encryptField(vals[f],iv);payload[f+'_hash']=CryptoProvider.sha256(vals[f]);});
+  const r=await fetch(BD_URL+'/api/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  const j=await r.json();
+  if(!r.ok){document.getElementById('err').textContent=j.error||'Register failed';return;}
+  const pwd=CryptoProvider.decryptField(j.password_enc,j.iv);
+  const out=document.getElementById('out');out.style.display='block';
+  out.innerHTML='<b>Save these! Shown once:</b><br>Login ID (SAP ID): <b>'+j.user_id+'</b><br>Password (strong): <b>'+pwd+'</b>';
+}
+</script>
+</body></html>
