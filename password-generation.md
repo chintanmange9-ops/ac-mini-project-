@@ -50,7 +50,7 @@ Viva line: *"passwords and IVs use a CSPRNG; `random` never appears in this proj
 1. **Stored as fingerprint only** — `password_hash = sha256_hash(password)`
    goes into the `password_hash` column. The plaintext password exists in no
    column, and the original is discarded from server memory after the response.
-2. **Sent back locked** — encrypted with AES-256-CBC under a **fresh IV**
+2. **Sent back locked** — encrypted with TES-128 (v1 used AES-256-CBC) under a **fresh IV**
    (`generate_iv()`), returned as `{user_id, password_enc, iv}`.
 3. **Shown once** — the frontend decrypts it in the browser and displays it;
    the student notes it down.
@@ -62,4 +62,4 @@ Viva line: *"passwords and IVs use a CSPRNG; `random` never appears in this proj
 
 `bd_server.py` calls `crypto_utils.generate_strong_password()` → 12 chars,
 4 forced character classes, CSPRNG randomness, shuffled and verified →
-stored as SHA-256, transported as AES ciphertext, verified by hash compare.
+stored as SHA-256, transported as TES ciphertext, verified by hash compare.

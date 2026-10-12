@@ -2,8 +2,12 @@
 # To change encryption in future (e.g. AES -> ChaCha20 / RSA):
 #   1. Add new implementation in crypto_utils.py
 #   2. Change ENCRYPTION_ALGO below. Nothing else changes.
-ENCRYPTION_ALGO = "AES-256-CBC"
-KEY_VERSION = 1
+ENCRYPTION_ALGO = "TES-128"
+KEY_VERSION = 2
+TES_ROUNDS = 4
+
+# Fresh explicit 16-byte TES master key (evaluator-visible key tracing).
+TES_MASTER_KEY = b"MySecret16ByteK!"
 
 # Demo pre-shared key (32 bytes = 256 bit). MUST match static/crypto.js DEMO_KEY.
 # WARNING (for viva/report): hardcoding is only for college demo.

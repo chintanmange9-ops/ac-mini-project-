@@ -1,5 +1,5 @@
 # Secure Student Portal — Applied Cryptography Mini Project
-**Stack:** Python Flask + SQLite · **Crypto:** AES-256-CBC (lock) + SHA-256 (fingerprint)
+**Stack:** Python Flask + SQLite · **Crypto:** TES-128 twin-engine cipher (lock) + SHA-256 (fingerprint)
 
 ## Simple idea
 Student types 5 things (roll no, sap id, name, sem, branch) in plaintext on screen.
@@ -34,7 +34,7 @@ Pages come from :5000, data goes to :5001 (see Network tab + CORS on BD).
    table (browser SHA256 vs stored hash → MATCH).
 
 ## Change encryption later (already planned)
-- Backend: only `crypto_utils.py` knows AES. Add new functions there,
+- Backend: only `tes_cipher.py` (+ thin dispatch in `crypto_utils.py`) knows TES.
   change 1 line `ENCRYPTION_ALGO` in `config.py`. Bump `KEY_VERSION`.
 - Frontend: only `static/crypto.js` → `CryptoProvider` knows AES.
   Replace its 4 functions, keep names. `algo` + `key_version` travel in

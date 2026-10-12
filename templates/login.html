@@ -67,7 +67,7 @@ function renderTransparency(pf){
   return '<br><b>Workflow — how your data travelled:</b>'
     +'<div class="flow">'
     +'<div class="step">① You type plaintext<br>(screen only, never sent)</div><div class="arr">→</div>'
-    +'<div class="step">② Browser locks it<br>AES-256-CBC + SHA256</div><div class="arr">→</div>'
+    +'<div class="step">② Browser locks it<br>TES-128 + SHA256</div><div class="arr">→</div>'
     +'<div class="step">③ POST to BD<br>ciphertext + hash only</div><div class="arr">→</div>'
     +'<div class="step">④ BD unlocks,<br>remakes hash, matches</div><div class="arr">→</div>'
     +'<div class="step">⑤ SQLite stores<br>locked + hash only</div>'

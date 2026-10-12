@@ -21,6 +21,7 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives import padding
 
 import config
+import tes_cipher
 
 
 # ---------- Hash (fingerprint) : one-way, cannot unlock ----------
@@ -58,18 +59,21 @@ def _aes_cbc_decrypt(cipher_b64: str, key: bytes, iv: bytes) -> str:
 # ---------- Pluggable dispatch (future swap point) ----------
 
 def encrypt_field(plaintext: str, iv: bytes, key: Optional[bytes] = None, algo: Optional[str] = None) -> str:
-    key = key or config.DEMO_KEY
     algo = algo or config.ENCRYPTION_ALGO
     if algo == "AES-256-CBC":
-        return _aes_cbc_encrypt(plaintext, key, iv)
+        return _aes_cbc_encrypt(plaintext, key or config.DEMO_KEY, iv)
+    if algo == "TES-128":
+        return tes_cipher.tes_encrypt_field(plaintext, key or config.TES_MASTER_KEY, iv)
     raise ValueError(f"Unsupported algo: {algo} (add it here to swap encryption)")
 
 
 def decrypt_field(cipher_b64: str, iv: bytes, key: Optional[bytes] = None, algo: Optional[str] = None) -> str:
-    key = key or config.DEMO_KEY
     algo = algo or config.ENCRYPTION_ALGO
     if algo == "AES-256-CBC":
-        return _aes_cbc_decrypt(cipher_b64, key, iv)
+        return _aes_cbc_decrypt(cipher_b64, key or config.DEMO_KEY, iv)
+    if algo == "TES-128":
+        # TES carries its IV inside the blob (IV || blocks); envelope iv unused.
+        return tes_cipher.tes_decrypt_field(cipher_b64, key or config.TES_MASTER_KEY)
     raise ValueError(f"Unsupported algo: {algo}")
 
 
