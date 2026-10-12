@@ -1,11 +1,54 @@
 <!doctype html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Secure Student Portal (Crypto Mini Project)</title>
-<style>body{font-family:Segoe UI,Arial;margin:0;background:#0f172a;color:#e2e8f0;display:flex;min-height:100vh;align-items:center;justify-content:center}div.card{background:#1e293b;padding:36px;border-radius:14px;width:380px;text-align:center}h1{font-size:22px}a.btn{display:block;margin:12px 0;padding:12px;border-radius:8px;text-decoration:none;font-weight:600}a.reg{background:#22c55e;color:#052e16}a.log{background:#38bdf8;color:#082f49}div.tabs{margin-bottom:8px}a.tab{display:inline-block;margin:0 4px;padding:8px 18px;border-radius:8px 8px 0 0;text-decoration:none;font-weight:600;font-size:14px}a.tab.on{background:#334155;color:#fff}a.tab.off{background:#0f172a;color:#94a3b8;border:1px solid #334155}p{font-size:13px;color:#94a3b8}</style>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&family=Space+Grotesk:wght@600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<style>:root{--bg:#0f172a;--card:#1e293b;--line:#334155;--muted:#94a3b8;--text:#e2e8f0;--green:#22c55e;--sky:#38bdf8;--red:#f87171}
+*{box-sizing:border-box}
+body{font-family:"Plus Jakarta Sans",Segoe UI,Arial,sans-serif;margin:0;min-height:100vh;color:var(--text);background:radial-gradient(900px 500px at 10% -10%,rgba(56,189,248,.14),transparent 60%),radial-gradient(800px 500px at 110% 110%,rgba(34,197,94,.10),transparent 60%),var(--bg);display:flex;justify-content:center;align-items:flex-start;padding:48px 16px}
+h1,h2{font-family:"Space Grotesk",sans-serif;letter-spacing:-.02em;margin:0 0 6px}
+h2{font-size:24px}
+a{color:var(--sky);text-decoration:none}a:hover{text-decoration:underline}
+.brand{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--sky);background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.25);padding:5px 10px;border-radius:999px;margin-bottom:14px}
+.brand:before{content:"";width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green)}
+form,.card{background:linear-gradient(180deg,rgba(30,41,59,.96),rgba(30,41,59,.88));border:1px solid var(--line);border-radius:18px;padding:32px;box-shadow:0 30px 60px -30px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.04);animation:rise .5s cubic-bezier(.2,.8,.2,1) both;transition:width .35s ease}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.sub{font-size:13px;color:var(--muted);margin:0 0 20px;line-height:1.5}
+label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin:14px 0 6px;letter-spacing:.02em}
+input{width:100%;padding:12px 14px;border-radius:10px;border:1px solid var(--line);background:#0b1222;color:var(--text);font:inherit;font-size:14px;outline:none;transition:border-color .2s,box-shadow .2s}
+input::placeholder{color:#475569}
+input:focus{border-color:var(--sky);box-shadow:0 0 0 4px rgba(56,189,248,.15)}
+input:user-invalid{border-color:var(--red);box-shadow:0 0 0 4px rgba(248,113,113,.12)}
+input:valid:not(:placeholder-shown){border-color:rgba(34,197,94,.55)}
+button{width:100%;padding:13px;border:0;border-radius:10px;font:inherit;font-weight:700;font-size:14px;cursor:pointer;margin-top:12px;position:relative;transition:transform .15s,filter .2s,box-shadow .2s}
+button:hover{filter:brightness(1.08);transform:translateY(-1px)}button:active{transform:none}
+button.ghost{background:transparent;color:var(--muted);border:1px dashed var(--line)}
+button.ghost:hover{color:var(--text);border-color:var(--muted)}
+button.busy{color:transparent!important;pointer-events:none}
+button.busy:after{content:"";position:absolute;inset:0;margin:auto;width:18px;height:18px;border-radius:50%;border:2.5px solid rgba(8,47,73,.35);border-top-color:#082f49;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#err:not(:empty){margin-top:14px;padding:12px 14px 12px 40px;border-radius:10px;background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.35);color:#fecaca;font-size:13px;position:relative;animation:shake .35s}
+#err:not(:empty):before{content:"!";position:absolute;left:12px;top:50%;transform:translateY(-50%);width:18px;height:18px;border-radius:50%;background:var(--red);color:#450a0a;font-weight:800;font-size:12px;display:grid;place-items:center}
+@keyframes shake{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+#out{margin-top:16px;padding:16px;border-radius:12px;display:none;word-break:break-word;font-size:14px;line-height:1.6;animation:rise .4s both}
+.foot{margin:22px 0 0;font-size:13px;color:var(--muted);text-align:center}
+@media(max-width:520px){body{padding:20px 10px}form,.card{padding:22px;border-radius:14px}}
+body{align-items:center}
+.card{width:440px;max-width:100%;text-align:center;padding:40px 34px}
+h1{font-size:30px;line-height:1.15}
+h1 span{background:linear-gradient(90deg,var(--sky),var(--green));-webkit-background-clip:text;background-clip:text;color:transparent}
+.chips{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:16px 0 26px}
+.chips span{font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:4px 10px;background:#0b1222}
+a.btn{display:flex;justify-content:space-between;align-items:center;margin:12px 0;padding:15px 18px;border-radius:12px;font-weight:700;text-decoration:none;transition:transform .15s,box-shadow .2s}
+a.btn:after{content:"→";transition:transform .2s}a.btn:hover{transform:translateY(-2px)}a.btn:hover:after{transform:translateX(4px)}
+a.reg{background:var(--green);color:#052e16;box-shadow:0 10px 30px -12px var(--green)}
+a.log{background:var(--sky);color:#082f49;box-shadow:0 10px 30px -12px var(--sky)}
+.tip{font-size:12px;color:var(--muted);margin-top:22px;padding-top:18px;border-top:1px solid var(--line)}
+</style>
 </head><body><div class="card">
-<h1>Student Portal — Encrypted</h1>
-<p>Student only &bull; Nothing travels as plaintext &bull; TES + SHA256</p>
+<div class="brand">End-to-end encrypted</div>
+<h1>Student Portal — <span>Encrypted</span></h1>
+<div class="chips"><span>Student only</span><span>Nothing travels as plaintext</span><span>TES + SHA256</span></div>
 <a class="btn reg" href="/register">Register (first time)</a>
 <a class="btn log" href="/login">Login (SAP ID + password)</a>
-<p>Open DevTools → Network to prove payload is ciphertext + hash.</p>
+<p class="tip">Open DevTools → Network to prove payload is ciphertext + hash.</p>
 </div></body></html>

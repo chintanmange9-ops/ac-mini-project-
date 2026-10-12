@@ -3,17 +3,80 @@
 <title>Login — Encrypted</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
 <script src="/static/crypto.js"></script>
-<style>body{font-family:Segoe UI,Arial;background:#0f172a;color:#e2e8f0;display:flex;justify-content:center;padding:30px}form{background:#1e293b;padding:28px;border-radius:12px;width:920px;max-width:94vw}form.narrow{width:400px}input{width:100%;margin:8px 0;padding:10px;border-radius:6px;border:1px solid #334155;box-sizing:border-box}button{width:100%;padding:12px;background:#38bdf8;border:0;border-radius:8px;font-weight:700;cursor:pointer}#out{margin-top:14px;background:#082f49;padding:12px;border-radius:8px;display:none;word-break:break-all}#err{margin-top:10px;color:#f87171}a{color:#38bdf8}table{border-collapse:collapse;font-size:13px;margin-top:8px}table.mine{width:100%}table.mine td{border:1px solid #334155;padding:5px}div.wrap{overflow-x:auto}table#dbtable{table-layout:fixed;width:100%;font-size:12px}table#dbtable th,table#dbtable td{border:1px solid #334155;padding:6px;word-break:break-all;overflow-wrap:anywhere}table#dbtable th{background:#0f172a;position:relative;user-select:none}div.resizer{position:absolute;right:-4px;top:0;width:9px;height:100%;cursor:col-resize;z-index:2}div.resizer:hover{background:#38bdf8}div.flow{display:flex;gap:4px;margin-top:8px;flex-wrap:wrap}div.step{background:#0f172a;border:1px solid #334155;border-radius:8px;padding:8px;font-size:12px;flex:1;min-width:120px}div.arr{align-self:center;color:#38bdf8;font-weight:700}div.subtabs{margin:10px 0}button.subtab{width:auto;background:#0f172a;color:#94a3b8;border:1px solid #334155;border-radius:8px;padding:8px 14px;margin:0 6px 0 0;cursor:pointer;font-weight:600}button.subtab.on{background:#38bdf8;color:#082f49;border-color:#38bdf8}</style>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&family=Space+Grotesk:wght@600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<style>:root{--bg:#0f172a;--card:#1e293b;--line:#334155;--muted:#94a3b8;--text:#e2e8f0;--green:#22c55e;--sky:#38bdf8;--red:#f87171}
+*{box-sizing:border-box}
+body{font-family:"Plus Jakarta Sans",Segoe UI,Arial,sans-serif;margin:0;min-height:100vh;color:var(--text);background:radial-gradient(900px 500px at 10% -10%,rgba(56,189,248,.14),transparent 60%),radial-gradient(800px 500px at 110% 110%,rgba(34,197,94,.10),transparent 60%),var(--bg);display:flex;justify-content:center;align-items:flex-start;padding:48px 16px}
+h1,h2{font-family:"Space Grotesk",sans-serif;letter-spacing:-.02em;margin:0 0 6px}
+h2{font-size:24px}
+a{color:var(--sky);text-decoration:none}a:hover{text-decoration:underline}
+.brand{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--sky);background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.25);padding:5px 10px;border-radius:999px;margin-bottom:14px}
+.brand:before{content:"";width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green)}
+form,.card{background:linear-gradient(180deg,rgba(30,41,59,.96),rgba(30,41,59,.88));border:1px solid var(--line);border-radius:18px;padding:32px;box-shadow:0 30px 60px -30px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.04);animation:rise .5s cubic-bezier(.2,.8,.2,1) both;transition:width .35s ease}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.sub{font-size:13px;color:var(--muted);margin:0 0 20px;line-height:1.5}
+label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin:14px 0 6px;letter-spacing:.02em}
+input{width:100%;padding:12px 14px;border-radius:10px;border:1px solid var(--line);background:#0b1222;color:var(--text);font:inherit;font-size:14px;outline:none;transition:border-color .2s,box-shadow .2s}
+input::placeholder{color:#475569}
+input:focus{border-color:var(--sky);box-shadow:0 0 0 4px rgba(56,189,248,.15)}
+input:user-invalid{border-color:var(--red);box-shadow:0 0 0 4px rgba(248,113,113,.12)}
+input:valid:not(:placeholder-shown){border-color:rgba(34,197,94,.55)}
+button{width:100%;padding:13px;border:0;border-radius:10px;font:inherit;font-weight:700;font-size:14px;cursor:pointer;margin-top:12px;position:relative;transition:transform .15s,filter .2s,box-shadow .2s}
+button:hover{filter:brightness(1.08);transform:translateY(-1px)}button:active{transform:none}
+button.ghost{background:transparent;color:var(--muted);border:1px dashed var(--line)}
+button.ghost:hover{color:var(--text);border-color:var(--muted)}
+button.busy{color:transparent!important;pointer-events:none}
+button.busy:after{content:"";position:absolute;inset:0;margin:auto;width:18px;height:18px;border-radius:50%;border:2.5px solid rgba(8,47,73,.35);border-top-color:#082f49;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#err:not(:empty){margin-top:14px;padding:12px 14px 12px 40px;border-radius:10px;background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.35);color:#fecaca;font-size:13px;position:relative;animation:shake .35s}
+#err:not(:empty):before{content:"!";position:absolute;left:12px;top:50%;transform:translateY(-50%);width:18px;height:18px;border-radius:50%;background:var(--red);color:#450a0a;font-weight:800;font-size:12px;display:grid;place-items:center}
+@keyframes shake{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+#out{margin-top:16px;padding:16px;border-radius:12px;display:none;word-break:break-word;font-size:14px;line-height:1.6;animation:rise .4s both}
+.foot{margin:22px 0 0;font-size:13px;color:var(--muted);text-align:center}
+@media(max-width:520px){body{padding:20px 10px}form,.card{padding:22px;border-radius:14px}}
+form{width:1080px;max-width:100%}form.narrow{width:420px}
+button.primary{background:var(--sky);color:#082f49;box-shadow:0 12px 30px -14px var(--sky)}
+#out{background:transparent;border:0;padding:0;margin-top:22px}
+#out>b:first-of-type{color:var(--green)}
+div.subtabs{display:flex;gap:4px;margin:16px 0 18px;padding:4px;background:#0b1222;border:1px solid var(--line);border-radius:12px;overflow-x:auto}
+button.subtab{width:auto;flex:1;white-space:nowrap;margin:0;padding:10px 16px;background:transparent;color:var(--muted);border-radius:9px;font-weight:600}
+button.subtab:hover{color:var(--text);transform:none}
+button.subtab.on{background:var(--sky);color:#082f49;box-shadow:0 6px 18px -8px var(--sky)}
+#pane0,#pane1,#pane2{animation:rise .35s both}
+table{border-collapse:separate;border-spacing:0;font-size:13px;margin-top:10px;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+table.mine{width:100%;margin-bottom:16px}
+table.mine td{padding:10px 14px;border-bottom:1px solid var(--line)}
+table.mine tr:last-child td{border-bottom:0}
+table.mine td:first-child{color:var(--muted);font-family:"JetBrains Mono",monospace;font-size:12px;width:35%;background:rgba(15,23,42,.5)}
+table.mine tr:nth-child(even) td{background:rgba(15,23,42,.35)}
+div.wrap{overflow:auto;max-height:62vh;border:1px solid var(--line);border-radius:12px;margin-top:10px}
+div.wrap table{border:0;border-radius:0;margin:0;overflow:visible}
+table#dbtable{table-layout:fixed;width:100%;min-width:1400px;font-size:11.5px;font-family:"JetBrains Mono",monospace}
+table#dbtable th,table#dbtable td{padding:8px 10px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);word-break:break-all;overflow-wrap:anywhere;vertical-align:top}
+table#dbtable th{position:sticky;top:0;z-index:3;background:#0b1222;color:var(--sky);text-align:left;font-weight:600;user-select:none;font-family:"Plus Jakarta Sans",sans-serif;text-transform:uppercase;letter-spacing:.04em;font-size:10.5px}
+table#dbtable tr:nth-child(odd) td{background:rgba(15,23,42,.45)}
+table#dbtable tr:hover td{background:rgba(56,189,248,.08)}
+div.resizer{position:absolute;right:-4px;top:0;width:9px;height:100%;cursor:col-resize;z-index:4}
+div.resizer:hover{background:var(--sky);opacity:.6}
+div.flow{display:flex;gap:6px;margin:12px 0;flex-wrap:wrap}
+div.step{background:#0b1222;border:1px solid var(--line);border-radius:12px;padding:12px;font-size:12px;flex:1;min-width:130px;line-height:1.5;transition:border-color .2s,transform .2s}
+div.step:hover{border-color:var(--sky);transform:translateY(-2px)}
+div.arr{align-self:center;color:var(--sky);font-weight:700}
+#calls>div{background:#0b1222}
+@media(max-width:640px){div.arr{display:none}div.step{min-width:100%}}
+</style>
 </head><body>
 <form id="loginform" class="narrow" onsubmit="return false">
+<div class="brand">Step 2 · Login</div>
 <h2>Student Login</h2>
-<p style="font-size:12px;color:#94a3b8">SAP ID travels locked, password travels as fingerprint only.</p>
-<input id="sap_id" placeholder="Login ID = SAP ID" required>
-<input id="password" type="password" placeholder="Strong password" required>
-<button onclick="doLogin()">Encrypt &amp; Login</button>
+<p class="sub">SAP ID travels locked, password travels as fingerprint only.</p>
+<label for="sap_id">Login ID</label><input id="sap_id" placeholder="Login ID = SAP ID" required>
+<label for="password">Password</label><input id="password" type="password" placeholder="Strong password" required>
+<button class="primary" onclick="withSpin(this,doLogin)">Encrypt &amp; Login</button>
 <div id="err"></div><div id="out"></div>
-<p><a href="/">← Home</a></p>
+<p class="foot"><a href="/">← Home</a></p>
 </form>
+<script>async function withSpin(b,fn){b.classList.add("busy");try{await fn();}finally{b.classList.remove("busy");}}</script>
 <script>const BD_URL="{{ bd_url }}";
 const callLog=[];
 async function apiCall(path,body){

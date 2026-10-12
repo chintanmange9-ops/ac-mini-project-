@@ -3,3 +3,4 @@ __pycache__/
 students.db
 logs/*.log
 memories/
+student-portal-redesign/
