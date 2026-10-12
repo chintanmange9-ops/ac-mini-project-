@@ -138,12 +138,19 @@ def api_profile():
         log.info("PROFILE served sap_hash=%s...", data["sap_id_hash"][:12])
         return jsonify({
             "roll_no_enc": row["roll_no_enc"],
+            "roll_no_hash": row["roll_no_hash"],
             "sap_id_enc": row["sap_id_enc"],
+            "sap_id_hash": row["sap_id_hash"],
             "name_enc": row["name_enc"],
+            "name_hash": row["name_hash"],
             "sem_enc": row["sem_enc"],
+            "sem_hash": row["sem_hash"],
             "branch_enc": row["branch_enc"],
+            "branch_hash": row["branch_hash"],
             "iv": row["iv"],
             "algo": row["algo"],
+            "key_version": row["key_version"],
+            "created_at": row["created_at"],
         }), 200
     except ValueError as e:
         return jsonify({"error": str(e)}), 400

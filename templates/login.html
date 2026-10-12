@@ -3,7 +3,7 @@
 <title>Login — Encrypted</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
 <script src="/static/crypto.js"></script>
-<style>body{font-family:Segoe UI,Arial;background:#0f172a;color:#e2e8f0;display:flex;justify-content:center;padding:30px}form{background:#1e293b;padding:28px;border-radius:12px;width:920px;max-width:94vw}form.narrow{width:400px}input{width:100%;margin:8px 0;padding:10px;border-radius:6px;border:1px solid #334155;box-sizing:border-box}button{width:100%;padding:12px;background:#38bdf8;border:0;border-radius:8px;font-weight:700;cursor:pointer}#out{margin-top:14px;background:#082f49;padding:12px;border-radius:8px;display:none;word-break:break-all}#err{margin-top:10px;color:#f87171}a{color:#38bdf8}table{border-collapse:collapse;font-size:13px;margin-top:8px}table.mine{width:100%}table.mine td{border:1px solid #334155;padding:5px}div.wrap{overflow-x:auto}table#dbtable{table-layout:fixed;width:100%;font-size:12px}table#dbtable th,table#dbtable td{border:1px solid #334155;padding:6px;word-break:break-all;overflow-wrap:anywhere}table#dbtable th{background:#0f172a;position:relative;user-select:none}div.resizer{position:absolute;right:-4px;top:0;width:9px;height:100%;cursor:col-resize;z-index:2}div.resizer:hover{background:#38bdf8}</style>
+<style>body{font-family:Segoe UI,Arial;background:#0f172a;color:#e2e8f0;display:flex;justify-content:center;padding:30px}form{background:#1e293b;padding:28px;border-radius:12px;width:920px;max-width:94vw}form.narrow{width:400px}input{width:100%;margin:8px 0;padding:10px;border-radius:6px;border:1px solid #334155;box-sizing:border-box}button{width:100%;padding:12px;background:#38bdf8;border:0;border-radius:8px;font-weight:700;cursor:pointer}#out{margin-top:14px;background:#082f49;padding:12px;border-radius:8px;display:none;word-break:break-all}#err{margin-top:10px;color:#f87171}a{color:#38bdf8}table{border-collapse:collapse;font-size:13px;margin-top:8px}table.mine{width:100%}table.mine td{border:1px solid #334155;padding:5px}div.wrap{overflow-x:auto}table#dbtable{table-layout:fixed;width:100%;font-size:12px}table#dbtable th,table#dbtable td{border:1px solid #334155;padding:6px;word-break:break-all;overflow-wrap:anywhere}table#dbtable th{background:#0f172a;position:relative;user-select:none}div.resizer{position:absolute;right:-4px;top:0;width:9px;height:100%;cursor:col-resize;z-index:2}div.resizer:hover{background:#38bdf8}div.flow{display:flex;gap:4px;margin-top:8px;flex-wrap:wrap}div.step{background:#0f172a;border:1px solid #334155;border-radius:8px;padding:8px;font-size:12px;flex:1;min-width:120px}div.arr{align-self:center;color:#38bdf8;font-weight:700}</style>
 </head><body>
 <form id="loginform" class="narrow" onsubmit="return false">
 <h2>Student Login</h2>
@@ -15,6 +15,19 @@
 <p><a href="/">← Home</a></p>
 </form>
 <script>const BD_URL="{{ bd_url }}";
+const callLog=[];
+async function apiCall(path,body){
+  const url=BD_URL+path;
+  callLog.push({method:'POST',url:url,headers:'Content-Type: application/json',body:JSON.stringify(body)});
+  return fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+}
+function short(s){s=String(s);return s.length>26?s.slice(0,26)+'…':s;}
+function callsHTML(){
+  if(!callLog.length)return '<p>No calls yet.</p>';
+  let h='';
+  callLog.forEach(c=>{h+='<div style="border:1px solid #334155;border-radius:8px;padding:8px;margin:6px 0;font-size:12px"><b>'+c.method+'</b> '+c.url+'<br>Headers: '+c.headers+'<br>Body:<br><span style="word-break:break-all;font-family:monospace;font-size:11px">'+c.body+'</span></div>';});
+  return h;
+}
 async function doLogin(){
   document.getElementById('err').textContent='';
   const sap=document.getElementById('sap_id').value.trim(), pwd=document.getElementById('password').value;
@@ -22,11 +35,11 @@ async function doLogin(){
   const iv=CryptoProvider.randomIV();
   const payload={sap_id_enc:CryptoProvider.encryptField(sap,iv),sap_id_hash:CryptoProvider.sha256(sap),
     password_hash:CryptoProvider.sha256(pwd),iv,algo:CryptoProvider.ALGO,key_version:CryptoProvider.KEY_VERSION};
-  const r=await fetch(BD_URL+'/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  const r=await apiCall('/api/login',payload);
   const j=await r.json();
   if(!r.ok){document.getElementById('err').textContent=j.error||'Login failed';return;}
   const name=CryptoProvider.decryptField(j.name_enc,j.iv);
-  const pr=await fetch(BD_URL+'/api/profile',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  const pr=await apiCall('/api/profile',payload);
   const pf=await pr.json();
   if(!pr.ok){document.getElementById('err').textContent=pf.error||'Could not load record';return;}
   const F=['roll_no','sap_id','name','sem','branch'];
@@ -34,12 +47,32 @@ async function doLogin(){
   F.forEach(f=>{rows+='<tr><td>'+f+'</td><td><b>'+CryptoProvider.decryptField(pf[f+'_enc'],pf.iv)+'</b></td></tr>';});
   const out=document.getElementById('out');out.style.display='block';
   document.getElementById('loginform').classList.remove('narrow');
-  out.innerHTML='Login success. Welcome, <b>'+name+'</b><br><br>Your record in DB (decrypted with your key):<table class="mine">'+rows+'</table><br><b>Full stored DB (all rows, locked) — login required to see this:</b><div id="dbtbl"><p>Loading DB…</p></div>';
+  out.innerHTML='Login success. Welcome, <b>'+name+'</b><br><br>Your record in DB (decrypted with your key):<table class="mine">'+rows+'</table>'+renderTransparency(pf)+'<br><b>Full stored DB (all rows, locked) — login required to see this:</b><div id="dbtbl"><p>Loading DB…</p></div>';
   loadFullDB(payload);
+}
+function renderTransparency(pf){
+  const F=['roll_no','sap_id','name','sem','branch'];
+  let m='';
+  F.forEach(f=>{
+    const plain=CryptoProvider.decryptField(pf[f+'_enc'],pf.iv);
+    const ok=CryptoProvider.sha256(plain)===pf[f+'_hash'];
+    m+='<tr><td>'+f+'</td><td><b>'+(ok?'✓ MATCH':'✗ FAIL')+'</b></td><td title="'+pf[f+'_hash']+'">'+short(pf[f+'_hash'])+'</td><td title="'+pf[f+'_enc']+'">'+short(pf[f+'_enc'])+'</td></tr>';
+  });
+  return '<br><b>Workflow — how your data travelled:</b>'
+    +'<div class="flow">'
+    +'<div class="step">① You type plaintext<br>(screen only, never sent)</div><div class="arr">→</div>'
+    +'<div class="step">② Browser locks it<br>AES-256-CBC + SHA256</div><div class="arr">→</div>'
+    +'<div class="step">③ POST to BD<br>ciphertext + hash only</div><div class="arr">→</div>'
+    +'<div class="step">④ BD unlocks,<br>remakes hash, matches</div><div class="arr">→</div>'
+    +'<div class="step">⑤ SQLite stores<br>locked + hash only</div>'
+    +'</div>'
+    +'<p style="font-size:12px">Registered at <b>'+pf.created_at+'</b> · verified just now.</p>'
+    +'<b>Exact calls FD → BD (this session):</b><div id="calls">'+callsHTML()+'</div>'
+    +'<b>Integrity check (recomputed live):</b><table class="mine"><tr><td><b>field</b></td><td><b>result</b></td><td><b>stored fingerprint</b></td><td><b>stored locked copy</b></td></tr>'+m+'</table>';
 }
 async function loadFullDB(payload){
   try{
-    const r=await fetch(BD_URL+'/api/db-preview',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const r=await apiCall('/api/db-preview',payload);
     const rows=await r.json();
     if(!r.ok){document.getElementById('dbtbl').innerHTML='<p>DB unavailable: '+(rows.error||r.status)+'</p>';return;}
     if(!rows.length){document.getElementById('dbtbl').innerHTML='<p>No rows.</p>';return;}
@@ -50,6 +83,7 @@ async function loadFullDB(payload){
     rows.forEach(w=>{h+='<tr>';cols.forEach(c=>{h+='<td title="'+w[c]+'">'+w[c]+'</td>';});h+='</tr>';});
     document.getElementById('dbtbl').innerHTML=h+'</table></div><p style="font-size:12px">'+rows.length+' row(s) — full values, all ciphertext + hash.</p>';
     makeResizable(document.getElementById('dbtable'));
+    if(document.getElementById('calls'))document.getElementById('calls').innerHTML=callsHTML();
   }catch(e){document.getElementById('dbtbl').innerHTML='<p>Cannot reach BD.</p>';}
 }
 function makeResizable(table){

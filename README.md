@@ -29,6 +29,9 @@ Pages come from :5000, data goes to :5001 (see Network tab + CORS on BD).
    Drag column edges to resize like Excel; hover a cell for the full value.
 6. After login, your own DB record is shown decrypted
    (BD `POST /api/profile` returns your locked row, browser unlocks it).
+7. Workflow strip after login shows the data journey, the exact FD→BD calls
+   (method, URL, headers, body keys, recorded live), plus a compact integrity
+   table (browser SHA256 vs stored hash → MATCH).
 
 ## Change encryption later (already planned)
 - Backend: only `crypto_utils.py` knows AES. Add new functions there,
