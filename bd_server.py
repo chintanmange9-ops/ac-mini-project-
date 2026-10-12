@@ -110,29 +110,10 @@ def api_register():
 def api_login():
     data = request.get_json(force=True)
     try:
-        for k in ("sap_id_enc", "sap_id_hash", "password_hash", "iv"):
-            if not data.get(k):
-                return jsonify({"error": f"Missing {k}"}), 400
-        iv = _get_iv(data)
-        algo = data.get("algo", config.ENCRYPTION_ALGO)
-
-        try:
-            sap_plain = crypto_utils.decrypt_field(data["sap_id_enc"], iv, algo=algo)
-        except Exception:
-            log.warning("LOGIN decrypt failed for sap_id")
-            return jsonify({"error": "Decrypt failed for sap_id"}), 401
-        if not crypto_utils.verify_hash(sap_plain, data["sap_id_hash"]):
-            log.warning("LOGIN integrity failed (sap_id hash mismatch)")
-            return jsonify({"error": "Integrity failed (sap_id hash mismatch)"}), 401
-
-        row = database.find_by_sap_hash(data["sap_id_hash"])
-        if row is None:
-            log.warning("LOGIN unknown sap_hash=%s...", data["sap_id_hash"][:12])
-            return jsonify({"error": "Invalid SAP ID or password"}), 401
-        if not hmac.compare_digest(row["password_hash"], data["password_hash"]):
-            log.warning("LOGIN wrong password sap_hash=%s...", data["sap_id_hash"][:12])
-            return jsonify({"error": "Invalid SAP ID or password"}), 401
-
+        row, err = _auth_student(data)
+        if err:
+            return err
+        assert row is not None
         log.info("LOGIN ok sap_hash=%s...", data["sap_id_hash"][:12])
         return jsonify({
             "success": True,
@@ -144,14 +125,89 @@ def api_login():
         return jsonify({"error": str(e)}), 400
 
 
-@app.get("/api/db-preview")
+@app.post("/api/profile")
+def api_profile():
+    """After login: return the student's OWN stored DB row (still locked).
+    Frontend decrypts it with the key — proves the DB held only ciphertext."""
+    data = request.get_json(force=True)
+    try:
+        row, err = _auth_student(data)
+        if err:
+            return err
+        assert row is not None
+        log.info("PROFILE served sap_hash=%s...", data["sap_id_hash"][:12])
+        return jsonify({
+            "roll_no_enc": row["roll_no_enc"],
+            "sap_id_enc": row["sap_id_enc"],
+            "name_enc": row["name_enc"],
+            "sem_enc": row["sem_enc"],
+            "branch_enc": row["branch_enc"],
+            "iv": row["iv"],
+            "algo": row["algo"],
+        }), 200
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+
+
+def _auth_student(data):
+    """Shared check for /api/login and /api/profile.
+
+    Decrypts the login id, verifies its fingerprint, looks the row up by
+    hash, compares the password fingerprint. Plaintext never stored/returned.
+    Returns (row, None) on success or (None, (response, code)) on failure.
+    """
+    for k in ("sap_id_enc", "sap_id_hash", "password_hash", "iv"):
+        if not data.get(k):
+            return None, (jsonify({"error": f"Missing {k}"}), 400)
+    iv = _get_iv(data)
+    algo = data.get("algo", config.ENCRYPTION_ALGO)
+
+    # 1. Decrypt login id, verify its fingerprint (channel integrity)
+    try:
+        sap_plain = crypto_utils.decrypt_field(data["sap_id_enc"], iv, algo=algo)
+    except Exception:
+        log.warning("AUTH decrypt failed for sap_id")
+        return None, (jsonify({"error": "Decrypt failed for sap_id"}), 401)
+    if not crypto_utils.verify_hash(sap_plain, data["sap_id_hash"]):
+        log.warning("AUTH integrity failed (sap_id hash mismatch)")
+        return None, (jsonify({"error": "Integrity failed (sap_id hash mismatch)"}), 401)
+
+    # 2. Lookup by hash (ciphertext differs every IV, hash is stable)
+    row = database.find_by_sap_hash(data["sap_id_hash"])
+    if row is None:
+        log.warning("AUTH unknown sap_hash=%s...", data["sap_id_hash"][:12])
+        return None, (jsonify({"error": "Invalid SAP ID or password"}), 401)
+
+    # 3. Compare password fingerprints (constant-time)
+    if not hmac.compare_digest(row["password_hash"], data["password_hash"]):
+        log.warning("AUTH wrong password sap_hash=%s...", data["sap_id_hash"][:12])
+        return None, (jsonify({"error": "Invalid SAP ID or password"}), 401)
+    return row, None
+
+
+@app.post("/api/db-preview")
 def api_db_preview():
-    conn = database.get_conn()
-    rows = conn.execute(
-        "SELECT id, sap_id_enc, sap_id_hash, name_enc, password_hash, algo, key_version, created_at "
-        "FROM students ORDER BY id DESC LIMIT 20").fetchall()
-    conn.close()
-    return jsonify([dict(r) for r in rows])
+    """Full stored DB (still locked) — login REQUIRED.
+
+    Same check as /api/login, so outsiders without credentials get 401.
+    """
+    data = request.get_json(force=True)
+    try:
+        _, err = _auth_student(data)
+        if err:
+            log.warning("DB-PREVIEW denied (no valid login)")
+            return err
+        conn = database.get_conn()
+        rows = conn.execute(
+            "SELECT id, roll_no_enc, roll_no_hash, sap_id_enc, sap_id_hash, "
+            "name_enc, name_hash, sem_enc, sem_hash, branch_enc, branch_hash, "
+            "password_hash, iv, key_version, created_at "
+            "FROM students ORDER BY id ASC LIMIT 50").fetchall()
+        conn.close()
+        log.info("DB-PREVIEW served %d row(s)", len(rows))
+        return jsonify([dict(r) for r in rows])
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
 
 
 if __name__ == "__main__":

@@ -20,9 +20,15 @@ Pages come from :5000, data goes to :5001 (see Network tab + CORS on BD).
 
 ## Prove it in viva
 1. DevTools → Network → `/api/register` payload: only `*_enc` + `*_hash`, no plaintext.
-2. `GET http://127.0.0.1:5001/api/db-preview` or open `students.db` (lives next to bd_server): only ciphertext + hashes.
+2. Open `students.db` (lives next to bd_server) or log in to see the DB table:
+   only ciphertext + hashes, all columns except `algo`, rows in ascending id order.
 3. Tamper test: change one hash → `400 Integrity failed`.
-4. Wrong password → `401`.
+4. Wrong password → `401`. DB preview without login → `401`.
+5. After login, the full DB table appears next to your decrypted record
+   (BD `POST /api/db-preview` needs a valid login; FD itself never touches the DB).
+   Drag column edges to resize like Excel; hover a cell for the full value.
+6. After login, your own DB record is shown decrypted
+   (BD `POST /api/profile` returns your locked row, browser unlocks it).
 
 ## Change encryption later (already planned)
 - Backend: only `crypto_utils.py` knows AES. Add new functions there,

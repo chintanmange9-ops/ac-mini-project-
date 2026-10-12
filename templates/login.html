@@ -3,9 +3,9 @@
 <title>Login — Encrypted</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
 <script src="/static/crypto.js"></script>
-<style>body{font-family:Segoe UI,Arial;background:#0f172a;color:#e2e8f0;display:flex;justify-content:center;padding:30px}form{background:#1e293b;padding:28px;border-radius:12px;width:400px}input{width:100%;margin:8px 0;padding:10px;border-radius:6px;border:1px solid #334155;box-sizing:border-box}button{width:100%;padding:12px;background:#38bdf8;border:0;border-radius:8px;font-weight:700;cursor:pointer}#out{margin-top:14px;background:#082f49;padding:12px;border-radius:8px;display:none}#err{margin-top:10px;color:#f87171}a{color:#38bdf8}</style>
+<style>body{font-family:Segoe UI,Arial;background:#0f172a;color:#e2e8f0;display:flex;justify-content:center;padding:30px}form{background:#1e293b;padding:28px;border-radius:12px;width:920px;max-width:94vw}form.narrow{width:400px}input{width:100%;margin:8px 0;padding:10px;border-radius:6px;border:1px solid #334155;box-sizing:border-box}button{width:100%;padding:12px;background:#38bdf8;border:0;border-radius:8px;font-weight:700;cursor:pointer}#out{margin-top:14px;background:#082f49;padding:12px;border-radius:8px;display:none;word-break:break-all}#err{margin-top:10px;color:#f87171}a{color:#38bdf8}table{border-collapse:collapse;font-size:13px;margin-top:8px}table.mine{width:100%}table.mine td{border:1px solid #334155;padding:5px}div.wrap{overflow-x:auto}table#dbtable{table-layout:fixed;width:100%;font-size:12px}table#dbtable th,table#dbtable td{border:1px solid #334155;padding:6px;word-break:break-all;overflow-wrap:anywhere}table#dbtable th{background:#0f172a;position:relative;user-select:none}div.resizer{position:absolute;right:-4px;top:0;width:9px;height:100%;cursor:col-resize;z-index:2}div.resizer:hover{background:#38bdf8}</style>
 </head><body>
-<form onsubmit="return false">
+<form id="loginform" class="narrow" onsubmit="return false">
 <h2>Student Login</h2>
 <p style="font-size:12px;color:#94a3b8">SAP ID travels locked, password travels as fingerprint only.</p>
 <input id="sap_id" placeholder="Login ID = SAP ID" required>
@@ -26,8 +26,43 @@ async function doLogin(){
   const j=await r.json();
   if(!r.ok){document.getElementById('err').textContent=j.error||'Login failed';return;}
   const name=CryptoProvider.decryptField(j.name_enc,j.iv);
+  const pr=await fetch(BD_URL+'/api/profile',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  const pf=await pr.json();
+  if(!pr.ok){document.getElementById('err').textContent=pf.error||'Could not load record';return;}
+  const F=['roll_no','sap_id','name','sem','branch'];
+  let rows='';
+  F.forEach(f=>{rows+='<tr><td>'+f+'</td><td><b>'+CryptoProvider.decryptField(pf[f+'_enc'],pf.iv)+'</b></td></tr>';});
   const out=document.getElementById('out');out.style.display='block';
-  out.innerHTML='Login success. Welcome, <b>'+name+'</b> (decrypted locally with key).';
+  document.getElementById('loginform').classList.remove('narrow');
+  out.innerHTML='Login success. Welcome, <b>'+name+'</b><br><br>Your record in DB (decrypted with your key):<table class="mine">'+rows+'</table><br><b>Full stored DB (all rows, locked) — login required to see this:</b><div id="dbtbl"><p>Loading DB…</p></div>';
+  loadFullDB(payload);
+}
+async function loadFullDB(payload){
+  try{
+    const r=await fetch(BD_URL+'/api/db-preview',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const rows=await r.json();
+    if(!r.ok){document.getElementById('dbtbl').innerHTML='<p>DB unavailable: '+(rows.error||r.status)+'</p>';return;}
+    if(!rows.length){document.getElementById('dbtbl').innerHTML='<p>No rows.</p>';return;}
+    const cols=['id','roll_no_enc','roll_no_hash','sap_id_enc','sap_id_hash','name_enc','name_hash','sem_enc','sem_hash','branch_enc','branch_hash','password_hash','iv','key_version','created_at'];
+    let h='<div class="wrap"><table id="dbtable"><tr>';
+    cols.forEach(c=>{h+='<th>'+c+'</th>';});
+    h+='</tr>';
+    rows.forEach(w=>{h+='<tr>';cols.forEach(c=>{h+='<td title="'+w[c]+'">'+w[c]+'</td>';});h+='</tr>';});
+    document.getElementById('dbtbl').innerHTML=h+'</table></div><p style="font-size:12px">'+rows.length+' row(s) — full values, all ciphertext + hash.</p>';
+    makeResizable(document.getElementById('dbtable'));
+  }catch(e){document.getElementById('dbtbl').innerHTML='<p>Cannot reach BD.</p>';}
+}
+function makeResizable(table){
+  table.querySelectorAll('th').forEach(th=>{
+    const h=document.createElement('div');h.className='resizer';th.appendChild(h);
+    h.addEventListener('mousedown',e=>{
+      e.preventDefault();
+      const startX=e.pageX,startW=th.offsetWidth;
+      function mv(ev){th.style.width=Math.max(50,startW+ev.pageX-startX)+'px';}
+      function up(){document.removeEventListener('mousemove',mv);document.removeEventListener('mouseup',up);}
+      document.addEventListener('mousemove',mv);document.addEventListener('mouseup',up);
+    });
+  });
 }
 </script>
 </body></html>

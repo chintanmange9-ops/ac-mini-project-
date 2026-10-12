@@ -3,7 +3,7 @@
 <title>Register — Encrypted</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
 <script src="/static/crypto.js"></script>
-<style>body{font-family:Segoe UI,Arial;background:#0f172a;color:#e2e8f0;display:flex;justify-content:center;padding:30px}form{background:#1e293b;padding:28px;border-radius:12px;width:400px}input{width:100%;margin:8px 0;padding:10px;border-radius:6px;border:1px solid #334155;box-sizing:border-box}button{width:100%;padding:12px;background:#22c55e;border:0;border-radius:8px;font-weight:700;cursor:pointer}#out{margin-top:14px;background:#052e16;padding:12px;border-radius:8px;display:none;word-break:break-all}#err{margin-top:10px;color:#f87171}a{color:#38bdf8}</style>
+<style>body{font-family:Segoe UI,Arial;background:#0f172a;color:#e2e8f0;display:flex;justify-content:center;padding:30px}form{background:#1e293b;padding:28px;border-radius:12px;width:400px}input{width:100%;margin:8px 0;padding:10px;border-radius:6px;border:1px solid #334155;box-sizing:border-box}button{width:100%;padding:12px;background:#22c55e;border:0;border-radius:8px;font-weight:700;cursor:pointer;margin-top:8px}button.ghost{background:#0f172a;color:#94a3b8;border:1px solid #334155}#out{margin-top:14px;background:#052e16;padding:12px;border-radius:8px;display:none;word-break:break-all}#err{margin-top:10px;color:#f87171}a{color:#38bdf8}</style>
 </head><body>
 <form id="f" onsubmit="return false">
 <h2>Student Register</h2>
@@ -13,12 +13,21 @@
 <input id="name" placeholder="Full Name" required>
 <input id="sem" placeholder="Semester (1-8)" required>
 <input id="branch" placeholder="Branch (e.g. CSE)" required>
+<button type="button" class="ghost" onclick="fillSample()">Autofill sample data</button>
 <button onclick="doRegister()">Encrypt &amp; Register</button>
 <div id="err"></div>
 <div id="out"></div>
 <p><a href="/">← Home</a> · <a href="/login">Go to Login</a></p>
 </form>
 <script>const BD_URL="{{ bd_url }}";
+function fillSample(){
+  document.getElementById('err').textContent='';
+  document.getElementById('roll_no').value='21CS001';
+  document.getElementById('sap_id').value='6000421'+String(Math.floor(1000+Math.random()*9000));
+  document.getElementById('name').value='Demo Student';
+  document.getElementById('sem').value='5';
+  document.getElementById('branch').value='CSE';
+}
 async function doRegister(){
   document.getElementById('err').textContent='';
   const F=['roll_no','sap_id','name','sem','branch'];
